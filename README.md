@@ -24,7 +24,7 @@ Github repository: https://github.com/charles0521/Gaussian-Elimination-and-QR-de
 * Comparing the precision and speed of the three solutions
 
 ## Engineering Infrastructure
-* Automatic build system: cmake
+* Automatic build system: make
 * Version control: git
 * Testing framework: pytest
 * Documentation: GitHub [[README.md]](https://github.com/charles0521/Gaussian-Elimination-and-QR-decomposition/blob/main/README.md)

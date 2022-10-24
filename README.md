@@ -23,6 +23,77 @@ Github repository: https://github.com/charles0521/Gaussian-Elimination-and-QR-de
 * Implement QR-decomposition method.
 * Comparing the precision and speed of the three solutions
 
+## System Architecture
+* ubuntu 22.04
+* ...(TODO)
+
+## API Description
+1. Gaussian Elimination
+2. QR decomposition
+
+```
+# This is the pseudo code
+
+void gauss_elm(double **A, double *b, int n)
+{
+	int     p, i, j, k;
+	double  maxEntry, t, r;
+
+	for(i=0;i<n-1;i++){
+		// Partial pivoting
+		maxEntry = fabs(A[i][i]);
+		p = i;
+		for(k=i;k<n;k++)
+			if(fabs(A[k][i])>maxEntry){
+				p = k;
+				maxEntry = fabs(A[k][i]);
+			}
+		if(p!=i){
+			for(j=i;j<n;j++){
+				t = A[p][j];
+				A[p][j] = A[i][j];
+				A[i][j] = t;
+			}
+			t = b[p];
+			b[p] = b[i];
+			b[i] = t;
+		}
+		//Forward elimination.
+        for(k=i+1;k<n;k++){
+			if(A[k][i]==0.0) continue;
+			
+			r = A[k][i]/A[i][i];
+			for(j=i;j<n;j++)
+				A[k][j] = A[k][j] - r*A[i][j];
+			b[k] = b[k] - r*b[i];
+		}
+	}
+}
+
+void QR_reflect(double **A, double *b, int n)
+{
+    ...
+}
+
+void back_substitute(double **U, double *x, double *b, int n)
+{
+    ...
+}
+
+
+
+void QR_solver(double **A, double *x, double *b, int n)
+{
+	// Reflect A into an upper triangular matrix.
+	QR_reflect(A, b, n);
+    // Solve the upper triangular system by using backward
+	// substitution.
+    back_substitute(A, x, b, n);
+}
+
+
+```
+
 ## Engineering Infrastructure
 * Automatic build system: make
 * Version control: git

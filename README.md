@@ -100,3 +100,6 @@ void QR_solver(double **A, double *x, double *b, int n)
 * Testing framework: pytest
 * Documentation: GitHub [[README.md]](https://github.com/charles0521/Gaussian-Elimination-and-QR-decomposition/blob/main/README.md)
 
+## Schedule
+Week 1 (now ~ 10/31): Study Linear Algebra
+

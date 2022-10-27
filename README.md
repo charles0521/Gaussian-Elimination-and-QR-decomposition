@@ -33,7 +33,6 @@ Github repository: https://github.com/charles0521/Gaussian-Elimination-and-QR-de
 ## API Description
 1. Gaussian Elimination
 2. QR decomposition
-3. 
 ```c++
 # This is the pseudo code
 

@@ -27,14 +27,13 @@ Github repository: https://github.com/charles0521/Gaussian-Elimination-and-QR-de
 * ubuntu 22.04
 * ...(TODO)
 
-## API Description
-1. Gaussian Elimination
-2. QR decomposition
-
 ## System Architecture
 ![image](https://user-images.githubusercontent.com/56105794/198297938-58fc295e-6e62-4189-adcb-79a5b5c393e6.png)
 
-
+## API Description
+1. Gaussian Elimination
+2. QR decomposition
+3. 
 ```c++
 # This is the pseudo code
 

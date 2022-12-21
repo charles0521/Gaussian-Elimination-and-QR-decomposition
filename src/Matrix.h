@@ -67,10 +67,10 @@ class Matrix
             return this->matrix[i*this->n_col + j];
         }
 
-        const double* data() const
-        {
-            return &(this->matrix[0]);
-        }
+        // const double* data() const
+        // {
+        //     return &(this->matrix[0]);
+        // }
 
         double* data()
         {

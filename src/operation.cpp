@@ -328,11 +328,5 @@ void qr_Decomposition_naive(Matrix &A, Matrix &Q, Matrix &R)
         Matrix H = householder_matrix(x, row, i);
         R = multiply_tile(H, R, TILE_BOLCK_SIZE);
         Q = multiply_tile(Q, H, TILE_BOLCK_SIZE);
-        cout << "H" << i+1 << ":" << endl;
-        H.output();
-        cout << "R" << i+1 << ":" << endl;
-        R.output();
-        cout << "Q" << i+1 << ":" << endl;
-        Q.output();
     }
 }

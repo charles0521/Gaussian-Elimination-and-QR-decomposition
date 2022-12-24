@@ -101,24 +101,16 @@ def test_qrDecomposition1():
     # numpy
     Q_qr_numpy, R_qr_numpy = np.linalg.qr(A_qr_numpy)
 
-    print('naive:')
-    print('Q')
-    print(Q_qr_naive.array)
-    print('R')
-    print(R_qr_naive.array)
-    print('---------------------')
-    print()
-    print('mkl:')
-    print('Q')
-    print(Q_qr_mkl.array)
-    print('R')
-    print(R_qr_mkl.array)
+    naive = blas.Matrix(3, 3)
+    mkl = blas.Matrix(3, 3)
+
+    A_naive = blas.multiply_mkl(Q_qr_naive, R_qr_naive)
+    A_mkl = blas.multiply_mkl(Q_qr_mkl, R_qr_mkl)
+    A_numpy = np.matmul(Q_qr_numpy, R_qr_numpy)
 
 
-    # matrix Q
-    assert np.allclose(Q_qr_mkl.array, Q_qr_numpy)
-    assert np.allclose(Q_qr_mkl.array, Q_qr_naive.array)
-    # matrix R
-    assert np.allclose(R_qr_mkl.array, R_qr_numpy)
-    assert np.allclose(R_qr_mkl.array, R_qr_naive.array)
+    assert np.allclose(nonsingular_matrix, A_naive.array)
+    assert np.allclose(nonsingular_matrix, A_mkl.array)
+    assert np.allclose(nonsingular_matrix, A_numpy)
+
 test_qrDecomposition1()

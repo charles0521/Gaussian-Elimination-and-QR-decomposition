@@ -124,43 +124,98 @@ def test_luDecomposition2():
     assert np.allclose(lu_naive.array, lu_numpy)
     assert np.allclose(lu_numpy, lu_mkl.array)
 
+
 def test_qrDecomposition1():
 
-    size = 2000
-    nonsingular_matrix = generate_random_matrix(size, size, -10, 10)
-
+    size = 3
+    nonsingular_matrix = np.array(
+        [[-1, -1, 1], [1, 3, 3], [-1, -1, 5]], dtype=np.float64)
 
     # matrix A Q R
     A_qr_mkl = blas.Matrix(size, size)
     Q_qr_mkl = blas.Matrix(size, size)
     R_qr_mkl = blas.Matrix(size, size)
 
+    # matrix A Q R
+    A_qr_naive = blas.Matrix(size, size)
+    Q_qr_naive = blas.Matrix(size, size)
+    R_qr_naive = blas.Matrix(size, size)
 
+    # numpy
     A_qr_numpy = nonsingular_matrix
 
     for it in range(size):
         for jt in range(size):
-            # qr_naive[it, jt] = nonsingular_matrix[it][jt]
+            A_qr_naive[it, jt] = nonsingular_matrix[it][jt]
             A_qr_mkl[it, jt] = nonsingular_matrix[it][jt]
 
+    # navie
+
+    blas.qr_Decomposition_naive(A_qr_naive, Q_qr_naive, R_qr_naive)
     # mkl
-    time1 = time.time()
     blas.qr_Decomposition_mkl(A_qr_mkl, Q_qr_mkl, R_qr_mkl)
-    time2 = time.time()
 
     # numpy
-    # Q_qr_numpy, R_qr_numpy = np.linalg.qr(A_qr_numpy, mode='full')
     Q_qr_numpy, R_qr_numpy = np.linalg.qr(A_qr_numpy)
+
+    A_naive = blas.multiply_mkl(Q_qr_naive, R_qr_naive)
+    A_mkl = blas.multiply_mkl(Q_qr_mkl, R_qr_mkl)
+    A_numpy = np.matmul(Q_qr_numpy, R_qr_numpy)
+
+
+    assert np.allclose(nonsingular_matrix, A_naive.array)
+    assert np.allclose(nonsingular_matrix, A_mkl.array)
+    assert np.allclose(nonsingular_matrix, A_numpy)
+
+def test_qrDecomposition():
+
+    size = 500
+    nonsingular_matrix = generate_random_matrix(size, size, -10, 10)
+
+    # matrix A Q R
+    A_qr_mkl = blas.Matrix(size, size)
+    Q_qr_mkl = blas.Matrix(size, size)
+    R_qr_mkl = blas.Matrix(size, size)
+
+    # matrix A Q R
+    A_qr_naive = blas.Matrix(size, size)
+    Q_qr_naive = blas.Matrix(size, size)
+    R_qr_naive = blas.Matrix(size, size)
+
+    # numpy
+    A_qr_numpy = nonsingular_matrix
+
+    for it in range(size):
+        for jt in range(size):
+            A_qr_naive[it, jt] = nonsingular_matrix[it][jt]
+            A_qr_mkl[it, jt] = nonsingular_matrix[it][jt]
+
+    # naive
+    time1 = time.time()
+    blas.qr_Decomposition_naive(A_qr_naive, Q_qr_naive, R_qr_naive)
+    # mkl
+    time2 = time.time()
+    blas.qr_Decomposition_mkl(A_qr_mkl, Q_qr_mkl, R_qr_mkl)
     time3 = time.time()
+
+    # numpy
+    Q_qr_numpy, R_qr_numpy = np.linalg.qr(A_qr_numpy)
+    time4 = time.time()
 
     with open("performance_qr.txt", "w") as f:
         f.write(f"size = {size}\n")
-        f.write(f"qr_mkl: {time2-time1:.4f} seconds.\n")
-        f.write(f"qr_numpy: {time3-time2:.4f} seconds.\n")
+        f.write(f"qr_naive: {time2-time1:.4f} seconds.\n")
+        f.write(f"qr_mkl: {time3-time2:.4f} seconds.\n")
+        f.write(f"qr_numpy: {time4-time3:.4f} seconds.\n")
+    
+    # A = Q*R
+    A_naive = blas.multiply_mkl(Q_qr_naive, R_qr_naive)
+    A_mkl = blas.multiply_mkl(Q_qr_mkl, R_qr_mkl)
+    A_numpy = np.matmul(Q_qr_numpy, R_qr_numpy)
 
-    # matrix Q
-    assert np.allclose(Q_qr_mkl.array, Q_qr_numpy)
+    # test
+    assert np.allclose(nonsingular_matrix, A_naive.array)
+    assert np.allclose(nonsingular_matrix, A_mkl.array)
+    assert np.allclose(nonsingular_matrix, A_numpy)
 
-    # matrix R
-    assert np.allclose(R_qr_mkl.array, R_qr_numpy)
 

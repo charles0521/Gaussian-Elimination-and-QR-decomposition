@@ -4,6 +4,7 @@
 #include "mkl.h"
 
 using namespace std;
+#define TILE_BOLCK_SIZE 64
 
 void swap_row(Matrix &m1, size_t r1, size_t r2)
 {
@@ -165,7 +166,7 @@ void qr_Decomposition_mkl(Matrix &A, Matrix &Q, Matrix &R)
     // Workspace array (required by LAPACKE_dgeqrf)
     double *tau = (double *)malloc(row * sizeof(double));
 
-    int info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, row, col,  A.data(), lda, tau);
+    int info = LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, row, col, A.data(), lda, tau);
     if (info != 0)
     {
         printf("Error: LAPACKE_dgeqrf returned error code %d\n", info);
@@ -186,7 +187,7 @@ void qr_Decomposition_mkl(Matrix &A, Matrix &Q, Matrix &R)
     if (info != 0)
     {
         printf("Error: LAPACKE_dorgqr returned error code %d\n", info);
-        return ;
+        return;
     }
 
     // Copy the Q matrix into Q
@@ -194,13 +195,144 @@ void qr_Decomposition_mkl(Matrix &A, Matrix &Q, Matrix &R)
     {
         for (int j = 0; j < col; j++)
         {
-            Q(i,j) = A(i,j);
+            Q(i, j) = A(i, j);
         }
     }
     free(tau);
 }
 
-void qr_Decomposiotn_naive(Matrix &A, Matrix &Q, Matrix &R)
+// ||x||
+double norm(double *x, int n)
 {
-    
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+        sum += x[i] * x[i];
+    }
+    return sqrt(sum);
+}
+
+double *sub_vec(double *v1, double *v2, int n)
+{
+    double *res = (double *)malloc(sizeof(double) * n);
+    for (int i = 0; i < n; ++i)
+        res[i] = v1[i] - v2[i];
+    return res;
+}
+
+double *add_vec(double *v1, double *v2, int n)
+{
+    double *res = (double *)malloc(sizeof(double) * n);
+    for (int i = 0; i < n; ++i)
+        res[i] = v1[i] + v2[i];
+    return res;
+}
+
+void normalize_vec(double *x, int n)
+{
+    double len = norm(x, n);
+    for (int i = 0; i < n; ++i)
+        x[i] /= len;
+}
+
+Matrix sub_matrix(Matrix m1, Matrix m2)
+{
+    if (m1.rows() != m2.rows() || m1.cols() != m2.cols())
+    {
+        throw out_of_range("Matrix subtraction error, dim is different");
+    }
+    int row = m1.rows();
+    int col = m1.cols();
+
+    Matrix m3(row, col);
+    for (int i = 0; i < row; ++i)
+        for (int j = 0; j < col; ++j)
+            m3(i, j) = m1(i, j) - m2(i, j);
+    return m3;
+}
+
+Matrix add_matrix(Matrix m1, Matrix m2)
+{
+    if (m1.rows() != m2.rows() || m1.cols() != m2.cols())
+    {
+        throw out_of_range("Matrix subtraction error, dim is different");
+    }
+    int row = m1.rows();
+    int col = m1.cols();
+
+    Matrix m3(row, col);
+    for (int i = 0; i < row; ++i)
+        for (int j = 0; j < col; ++j)
+            m3(i, j) = m1(i, j) + m2(i, j);
+    return m3;
+}
+// return I
+Matrix Identity(int n)
+{
+    Matrix I(n, n);
+    for (int i = 0; i < n; ++i)
+        I(i, i) = 1;
+    return I;
+}
+
+Matrix scale_matrix(Matrix m1, double size)
+{
+    for (size_t i = 0; i < m1.rows(); ++i)
+        for (size_t j = 0; j < m1.cols(); ++j)
+            m1(i, j) *= size;
+    return m1;
+}
+// H = I - 2vv^T
+Matrix householder_matrix(double *x, int n, int e)
+{
+    // x = x - ||x||e
+    x[e] = x[e] - norm(x, n);
+
+    // x/||x||
+    normalize_vec(x, n);
+
+    Matrix vvt(n, n);
+
+    // vvt = x * x^t
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            vvt(i, j) = x[i] * x[j];
+        }
+    }
+    // h = householder matrix = I - 2 * vvt
+    Matrix h = sub_matrix(Identity(n), scale_matrix(vvt, 2.0));
+
+    return h;
+}
+
+void qr_Decomposition_naive(Matrix &A, Matrix &Q, Matrix &R)
+{
+    int row = A.rows();
+    int iter = row - 1;
+
+    double *x = (double *)malloc(sizeof(double) * row);
+    R = A;
+    Q = Identity(row);
+    for (int i = 0; i < iter; ++i)
+    {
+        // get column
+        for (int j = 0; j < row; ++j)
+        {
+            if (j >= i)
+                x[j] = R(j, i);
+            else
+                x[j] = 0;
+        }
+        Matrix H = householder_matrix(x, row, i);
+        R = multiply_tile(H, R, TILE_BOLCK_SIZE);
+        Q = multiply_tile(Q, H, TILE_BOLCK_SIZE);
+        cout << "H" << i+1 << ":" << endl;
+        H.output();
+        cout << "R" << i+1 << ":" << endl;
+        R.output();
+        cout << "Q" << i+1 << ":" << endl;
+        Q.output();
+    }
 }

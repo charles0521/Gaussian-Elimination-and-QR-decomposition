@@ -197,6 +197,7 @@ namespace python
             mod.def("multiply_mkl", &multiply_mkl, "Matrix multiply with mkl method.");
             mod.def("lu_Decomposition_naive", &lu_Decomposition_naive, "naive LU decomposition");
             mod.def("lu_Decomposition_mkl", &lu_Decomposition_mkl, "LAPACK LU decomposition");
+            mod.def("qr_Decomposition_naive", &qr_Decomposition_naive, "navie QR decomposition");
             mod.def("qr_Decomposition_mkl", &qr_Decomposition_mkl, "LAPACK QR decomposition");
         }
 

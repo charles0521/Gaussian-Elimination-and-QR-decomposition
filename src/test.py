@@ -1,52 +1,67 @@
 import numpy as np
-import mod
+import blas
 import pytest
 from pytest import approx
 import math
 from scipy.linalg import lu_factor, lu_solve
+import pybind11
+
+def generate_random_matrix(n, m, lower, upper):
+    A = np.random.uniform(lower, upper, size=(n, m))
+    return A
 
 def test_luDecomposition():
-    size = 5
+    size = 4
 
-    m1 = mod.Matrix(size, size)
-    m2 = mod.Matrix(size, size)
-    m3 = np.zeros((size,size), dtype=np.float64)
+    m1 = blas.Matrix(size, size)
+    m2 = blas.Matrix(size, size)
+
+    nonsingular = generate_random_matrix(size, size, -1, 1)
+    m3 = nonsingular
 
     for it in range(size):
         for jt in range(size):
-            m1[it, jt] = it * size + jt + 1
-            m2[it, jt] = it * size + jt + 1
-            m3[it][jt] = np.float64(it * size + jt + 1)
+            m1[it, jt] = nonsingular[it][jt]
+            m2[it, jt] = nonsingular[it][jt]
 
-    p1 = np.zeros(size)
-    p2 = np.zeros(size)
+    p1 = np.zeros(size, dtype=np.int)
+    p2 = np.zeros(size, dtype=np.int)
 
-    # p1 = mod.get_array_data(p1)
-    # p2 = mod.get_array_data(p2)
 
-    mod.lu_Decomposition_naive(m1, p1)
-    mod.lu_Decomposition_mkl(m2, p2)
-    LU, _ = lu_factor(m3)
-
-    ans1 = np.zeros((size, size))
-    ans2 = np.zeros((size, size))
-    for i in range(size):
-        for j in range(size):
-            ans1[i][j] = m1[i, j]
-            ans2[i][j] = m2[i, j]
+    p1 = blas.lu_Decomposition_naive(m1, p1)
+    p2 = blas.lu_Decomposition_mkl(m2, p2)
+    LU, p3 = lu_factor(m3)
     
+
+    assert np.allclose(m1.array, m2.array)
+    assert np.allclose(m1.array, LU)
+    assert np.allclose(m2.array, LU)
+
     print('naive:')
-    print(ans1)
+    print(m1.array)
+    print(p1)
     print('mkl')
-    print(ans2)
+    print(m2.array)
+    print(p2)
     print('numpy')
     print(LU)
+    print(p3)
 
-    print('-----------numpy == navie-------------')
-    print(np.allclose(ans1, LU))
-    print('-----------mkl == navie-------------')
-    print(np.allclose(ans2, LU))
-    print('-----------navie == mkl-------------')
-    print(np.allclose(ans1, ans2))
+    print()
+    print()
+    print('----------------')
+    m1.array[0][0] = -999
+    print('naive:')
+    print(m1.array)
+    print(p1)
+    print('mkl')
+    print(m2.array)
+    print(p2)
+    print('numpy')
+    print(LU)
+    print(p3)
+    assert np.allclose(m1.array, m2.array)
+    assert np.allclose(m1.array, LU)
+    assert np.allclose(m2.array, LU)
 
 test_luDecomposition()

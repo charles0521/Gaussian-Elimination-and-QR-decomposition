@@ -1,15 +1,16 @@
-EXE = mod$(shell python3-config --extension-suffix)
+
+EXE = blas$(shell python3-config --extension-suffix)
 OBJ_DIR = obj
 
 TEST_FILE = $(wildcard test_*.py)
 
-TRASH = .cache __pycache__ .pytest_cache performance.txt
+TRASH = .cache __pycache__ .pytest_cache $(wildcard *.txt)
 
 SOURCES = $(wildcard *.cpp)
 OBJS = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(notdir $(SOURCES)))))
 
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -O3 -shared -fPIC `python3 -m pybind11 --includes` $(shell python3-config --includes) -Iextern/pybind11/include -I/usr/include/mkl
+CXXFLAGS = -std=c++17 -Wall -O3 -shared -fPIC `python3 -m pybind11 --includes` $(shell python3-config --includes) -I $(shell python -c "import numpy; print(numpy.get_include())") -Iextern/pybind11/include -I/usr/include/mkl
 
 LIBS = -L/usr/lib/x86_64-linux-gnu/mkl -lblas
 

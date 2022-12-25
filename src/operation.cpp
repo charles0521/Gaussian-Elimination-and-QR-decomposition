@@ -2,9 +2,11 @@
 #include <iostream>
 #include "operation.h"
 #include "mkl.h"
-
+#include <omp.h>
 using namespace std;
 #define TILE_BOLCK_SIZE 64
+
+
 
 void swap_row(Matrix &m1, size_t r1, size_t r2)
 {
@@ -97,7 +99,7 @@ Matrix multiply_tile(const Matrix &m1, const Matrix &m2, size_t block_size)
         throw out_of_range("the number of first matrix column differs from that of second matrix row");
     }
     Matrix m3(m1.rows(), m2.cols());
-
+    #pragma omp parallel for
     for (size_t row = 0; row < m1.rows(); row += block_size)
     {
         for (size_t col = 0; col < m2.cols(); col += block_size)
@@ -142,7 +144,7 @@ Matrix multiply_naive(const Matrix &m1, const Matrix &m2)
         throw out_of_range("the number of first matrix column differs from that of second matrix row");
     }
     Matrix m3(m1.rows(), m2.cols());
-
+    #pragma omp parallel for
     for (size_t row = 0; row < m1.rows(); ++row)
     {
         for (size_t col = 0; col < m2.cols(); ++col)
@@ -200,7 +202,6 @@ void qr_Decomposition_mkl(Matrix &A, Matrix &Q, Matrix &R)
     }
     free(tau);
 }
-
 // ||x||
 double norm(double *x, int n)
 {
@@ -328,5 +329,74 @@ void qr_Decomposition_naive(Matrix &A, Matrix &Q, Matrix &R)
         Matrix H = householder_matrix(x, row, i);
         R = multiply_tile(H, R, TILE_BOLCK_SIZE);
         Q = multiply_tile(Q, H, TILE_BOLCK_SIZE);
+        // R = multiply_mkl(H, R);
+        // Q = multiply_mkl(Q, H);
     }
+}
+
+pybind11::array_t<double> lu_solve(Matrix &A, double *b, pybind11::array_t<int> &p)
+{
+    int n = A.rows();
+    // Solve Ly = b for y
+    int *perm = p.mutable_data();
+    double *y = (double *)malloc(sizeof(double) * n);
+    for (int i = 0; i < n; i++)
+    {
+        y[i] = b[perm[i]];
+        for (int j = 0; j < i; j++)
+        {
+            y[i] -= A(i, j) * y[j];
+        }
+    }
+    // Solve Ux = y for x
+    double *x = (double *)malloc(sizeof(double) * n);
+    for (int i = n - 1; i >= 0; i--)
+    {
+        x[i] = y[i];
+        for (int j = i + 1; j < n; j++)
+        {
+            x[i] -= A(i, j) * x[j];
+        }
+        x[i] /= A(i, i);
+    }
+
+    free(y);
+    return pybind11::array_t<double>(
+        {n},              // shape
+        {sizeof(double)}, // C-style contiguous strides for double
+        x                 // the data pointer
+    );
+}
+
+pybind11::array_t<double> naive_lu_solver(Matrix &A, pybind11::array_t<double> B, pybind11::array_t<int> &P)
+{
+    double *b = B.mutable_data();
+    pybind11::array_t<int> perm = lu_Decomposition_naive(A, P);
+    return lu_solve(A, b, perm);
+}
+
+pybind11::array_t<double> mkl_lu_solver(Matrix &A, pybind11::array_t<double> B, pybind11::array_t<int> &P)
+{
+    int n = A.rows();
+    
+    std::vector<int> ipiv(n);
+
+    double *b = B.mutable_data();
+    int status = LAPACKE_dgesv(
+        LAPACK_ROW_MAJOR,
+        n,
+        1,
+        A.data(),
+        n,
+        ipiv.data(),
+        b,
+        1
+    );
+
+    return pybind11::array_t<double>(
+        {n},              // shape
+        {sizeof(double)}, // C-style contiguous strides for double
+        b                 // the data pointer
+    );
+
 }

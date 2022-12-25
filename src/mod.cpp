@@ -199,6 +199,9 @@ namespace python
             mod.def("lu_Decomposition_mkl", &lu_Decomposition_mkl, "LAPACK LU decomposition");
             mod.def("qr_Decomposition_naive", &qr_Decomposition_naive, "navie QR decomposition");
             mod.def("qr_Decomposition_mkl", &qr_Decomposition_mkl, "LAPACK QR decomposition");
+            mod.def("naive_lu_solver", &naive_lu_solver, "LU solve linear equation");
+            mod.def("mkl_lu_solver", &mkl_lu_solver, "LU solve linear equation");
+            
         }
 
     }; /* end class WrapMatrix */

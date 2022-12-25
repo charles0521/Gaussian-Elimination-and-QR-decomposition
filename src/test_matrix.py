@@ -10,7 +10,7 @@ def generate_random_matrix(n, m, lower, upper):
     A = np.random.uniform(lower, upper, size=(n, m))
     return A
 
-def test_correctness():
+def test_matrix_multiply1():
     size = 500
 
     m1 = blas.Matrix(size, size)
@@ -28,7 +28,7 @@ def test_correctness():
     assert (m3_naive == m3_tile)
     assert (m3_naive == m3_mkl)
 
-def test_correctness2():
+def test_matrix_multiply2():
     size = 1000
 
     m1 = blas.Matrix(size, size)
@@ -58,7 +58,7 @@ def test_correctness2():
     assert (m3_naive == m3_tile)
     assert (m3_naive == m3_mkl)
 
-def test_luDecomposition1():
+def test_lu_Decomposition1():
     size = 3
 
     nonsingular_matrix = generate_random_matrix(size, size, -1, 1)
@@ -86,7 +86,7 @@ def test_luDecomposition1():
     assert np.allclose(lu_naive.array, lu_numpy)
     assert np.allclose(lu_numpy, lu_mkl.array)
 
-def test_luDecomposition2():
+def test_lu_Decomposition2():
     size = 2000
 
     nonsingular_matrix = generate_random_matrix(size, size, -1, 1)
@@ -125,7 +125,7 @@ def test_luDecomposition2():
     assert np.allclose(lu_numpy, lu_mkl.array)
 
 
-def test_qrDecomposition1():
+def test_qr_Decomposition1():
 
     size = 3
     nonsingular_matrix = np.array(
@@ -167,9 +167,9 @@ def test_qrDecomposition1():
     assert np.allclose(nonsingular_matrix, A_mkl.array)
     assert np.allclose(nonsingular_matrix, A_numpy)
 
-def test_qrDecomposition():
+def test_qr_Decomposition2():
 
-    size = 500
+    size = 1000
     nonsingular_matrix = generate_random_matrix(size, size, -10, 10)
 
     # matrix A Q R
@@ -219,3 +219,44 @@ def test_qrDecomposition():
     assert np.allclose(nonsingular_matrix, A_numpy)
 
 
+# Ax = b
+def test_lu_solver():
+    size = 1000
+
+    # generate Ax = b
+    A = np.random.rand(size, size)
+    b = np.random.rand(size, 1)
+    x = np.linalg.solve(A, b)
+
+
+    lu_naive = blas.Matrix(size, size)
+    lu_mkl = blas.Matrix(size, size)
+    lu_numpy = A
+    
+
+    for it in range(size):
+        for jt in range(size):
+            lu_naive[it, jt] = A[it][jt]
+            lu_mkl[it, jt] = A[it][jt]
+    
+    # pivot
+    naive_pi = np.zeros(size)
+    mkl_pi = np.zeros(size)
+
+    time1 = time.time()
+    my_x = blas.naive_lu_solver(lu_naive, b, naive_pi)
+    time2 = time.time()
+    mkl_x = blas.mkl_lu_solver(lu_mkl, b, mkl_pi)
+    time3 = time.time()
+    # x = np.linalg.solve(A, b)
+    # time4 = time.time()
+
+    with open("solve_equation.txt", "w") as f:
+        f.write(f"size = {size}\n")
+        f.write(f"naive_solve_equation: {time2-time1:.4f} seconds.\n")
+        f.write(f"mkl_solve_equation: {time3-time2:.4f} seconds.\n")
+        # f.write(f"numpy_solve_equation: {time4-time3:.4f} seconds.\n")
+
+
+    assert np.allclose(my_x, np.squeeze(x))
+    assert np.allclose(mkl_x, np.squeeze(x))

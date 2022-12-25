@@ -5,7 +5,7 @@ from pytest import approx
 import math
 from scipy.linalg import lu_factor, lu_solve
 import pybind11
-
+import time
 
 def generate_random_matrix(n, m, lower, upper):
     A = np.random.uniform(lower, upper, size=(n, m))
@@ -68,49 +68,98 @@ def generate_random_matrix(n, m, lower, upper):
 # test_luDecomposition()
 
 
-def test_qrDecomposition1():
+# def test_qrDecomposition1():
 
+#     size = 3
+#     nonsingular_matrix = np.array(
+#         [[-1, -1, 1], [1, 3, 3], [-1, -1, 5]], dtype=np.float64)
+
+#     # matrix A Q R
+#     A_qr_mkl = blas.Matrix(size, size)
+#     Q_qr_mkl = blas.Matrix(size, size)
+#     R_qr_mkl = blas.Matrix(size, size)
+
+#     # matrix A Q R
+#     A_qr_naive = blas.Matrix(size, size)
+#     Q_qr_naive = blas.Matrix(size, size)
+#     R_qr_naive = blas.Matrix(size, size)
+
+#     # numpy
+#     A_qr_numpy = nonsingular_matrix
+
+#     for it in range(size):
+#         for jt in range(size):
+#             A_qr_naive[it, jt] = nonsingular_matrix[it][jt]
+#             A_qr_mkl[it, jt] = nonsingular_matrix[it][jt]
+
+#     # navie
+
+#     blas.qr_Decomposition_naive(A_qr_naive, Q_qr_naive, R_qr_naive)
+#     # mkl
+#     blas.qr_Decomposition_mkl(A_qr_mkl, Q_qr_mkl, R_qr_mkl)
+
+#     # numpy
+#     Q_qr_numpy, R_qr_numpy = np.linalg.qr(A_qr_numpy)
+
+#     naive = blas.Matrix(3, 3)
+#     mkl = blas.Matrix(3, 3)
+
+#     A_naive = blas.multiply_mkl(Q_qr_naive, R_qr_naive)
+#     A_mkl = blas.multiply_mkl(Q_qr_mkl, R_qr_mkl)
+#     A_numpy = np.matmul(Q_qr_numpy, R_qr_numpy)
+
+
+#     assert np.allclose(nonsingular_matrix, A_naive.array)
+#     assert np.allclose(nonsingular_matrix, A_mkl.array)
+#     assert np.allclose(nonsingular_matrix, A_numpy)
+
+# test_qrDecomposition1()
+
+
+def test_lu_solver():
     size = 3
-    nonsingular_matrix = np.array(
-        [[-1, -1, 1], [1, 3, 3], [-1, -1, 5]], dtype=np.float64)
 
-    # matrix A Q R
-    A_qr_mkl = blas.Matrix(size, size)
-    Q_qr_mkl = blas.Matrix(size, size)
-    R_qr_mkl = blas.Matrix(size, size)
+    # generate Ax = b
+    A = np.random.rand(size, size)
+    b = np.random.rand(size, 1)
+    x = np.linalg.solve(A, b)
+    AA = A
+    bb = b
 
-    # matrix A Q R
-    A_qr_naive = blas.Matrix(size, size)
-    Q_qr_naive = blas.Matrix(size, size)
-    R_qr_naive = blas.Matrix(size, size)
-
-    # numpy
-    A_qr_numpy = nonsingular_matrix
+    lu_naive = blas.Matrix(size, size)
+    lu_mkl = blas.Matrix(size, size)
+    lu_numpy = A
+    
 
     for it in range(size):
         for jt in range(size):
-            A_qr_naive[it, jt] = nonsingular_matrix[it][jt]
-            A_qr_mkl[it, jt] = nonsingular_matrix[it][jt]
+            lu_naive[it, jt] = A[it][jt]
+            lu_mkl[it, jt] = A[it][jt]
+    
+    # pivot
+    naive_pi = np.zeros(size)
+    mkl_pi = np.zeros(size)
+    # print(x)
+    time1 = time.time()
+    my_x = blas.naive_lu_solver(lu_naive, b, naive_pi)
+    
+    time2 = time.time()
+    mkl_x = blas.mkl_lu_solver(lu_mkl, b, mkl_pi)
+    time3 = time.time()
+    x = np.linalg.solve(AA, bb)
+    print(my_x)
+    print(mkl_x)
+    print(np.squeeze(x))
+    time4 = time.time()
+    # print('@@')
+    # print(x)
+    # with open("solve_equation.txt", "w") as f:
+    #     f.write(f"size = {size}\n")
+    #     f.write(f"naive_solve_equation: {time2-time1:.4f} seconds.\n")
+    #     f.write(f"mkl_solve_equation: {time3-time2:.4f} seconds.\n")
+    #     f.write(f"numpy_solve_equation: {time4-time3:.4f} seconds.\n")
 
-    # navie
 
-    blas.qr_Decomposition_naive(A_qr_naive, Q_qr_naive, R_qr_naive)
-    # mkl
-    blas.qr_Decomposition_mkl(A_qr_mkl, Q_qr_mkl, R_qr_mkl)
-
-    # numpy
-    Q_qr_numpy, R_qr_numpy = np.linalg.qr(A_qr_numpy)
-
-    naive = blas.Matrix(3, 3)
-    mkl = blas.Matrix(3, 3)
-
-    A_naive = blas.multiply_mkl(Q_qr_naive, R_qr_naive)
-    A_mkl = blas.multiply_mkl(Q_qr_mkl, R_qr_mkl)
-    A_numpy = np.matmul(Q_qr_numpy, R_qr_numpy)
-
-
-    assert np.allclose(nonsingular_matrix, A_naive.array)
-    assert np.allclose(nonsingular_matrix, A_mkl.array)
-    assert np.allclose(nonsingular_matrix, A_numpy)
-
-test_qrDecomposition1()
+    assert np.allclose(my_x, np.squeeze(x))
+    assert np.allclose(mkl_x, np.squeeze(x))
+test_lu_solver()

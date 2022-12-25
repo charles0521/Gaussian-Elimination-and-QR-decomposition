@@ -10,7 +10,7 @@ SOURCES = $(wildcard *.cpp)
 OBJS = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(notdir $(SOURCES)))))
 
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -O3 -shared -fPIC `python3 -m pybind11 --includes` $(shell python3-config --includes) -I $(shell python -c "import numpy; print(numpy.get_include())") -Iextern/pybind11/include -I/usr/include/mkl
+CXXFLAGS = -std=c++17 -fopenmp -Wall -O3 -shared -fPIC `python3 -m pybind11 --includes` $(shell python3-config --includes) -I $(shell python -c "import numpy; print(numpy.get_include())") -Iextern/pybind11/include -I/usr/include/mkl
 
 LIBS = -L/usr/lib/x86_64-linux-gnu/mkl -lblas
 
